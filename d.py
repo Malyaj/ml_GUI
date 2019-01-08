@@ -3,20 +3,17 @@
 # Markov Chains in Python: Beginner Tutorial
 # https://www.datacamp.com/community/tutorials/markov-chains-python-tutorial
 
-# The statespace
 import PySimpleGUI as sg
 import os
 import pandas as pd
-import sklearn
-import sys
 import numpy as np
 import matplotlib.pyplot as plt
+
 
 path = r"D:\Users\703143501\Documents\Genpact Internal\Debu_GUI"
 os.chdir(path)
 
 # Import data set
-
 transitionName1 = pd.read_csv('transitionName.csv', encoding = 'ISO-8859-1')
 transitionMatrix1 = pd.read_csv('transitionMatrix.csv', encoding = 'ISO-8859-1')
 
@@ -31,7 +28,7 @@ transitionMatrix = pd.DataFrame(transitionMatrix1.iloc[:,1:9])
 
 #states = transitionMatrix.columns.values
 states = list(transitionMatrix)
-print(states)
+#print(states)
 states = ["ND", "1-30", "31-60", "61-90", "91-180", "180-360", "360+", "Closed"]
 
 # Possible sequences of events
@@ -68,17 +65,17 @@ activityToday = "ND"
 # Forecast
 # Lines
 Lines1= np.matrix(lines.iloc[:8,0])
-print(Lines1)
-print(monthlyNDforecast.iloc[1,0])
+#print(Lines1)
+#print(monthlyNDforecast.iloc[1,0])
 ##########
 ############
 #############
 #Need to check forecast_lines0 return value
 #print("Volume (#Lines) forecast after " + str(months) + " months for the scenario where starting state is " + activityToday  + " : ")
 forecast_lines0 = transitionMatrix.T * Lines1.T
-print(transitionMatrix)
-print(Lines1)
-print(forecast_lines0)
+#print(transitionMatrix)
+#print(Lines1)
+#print(forecast_lines0)
 
 #monthlyNDforecastM1 = np.matrix([monthlyNDforecast.iloc[0,0],0,0,0,0,0,0,0]).T
 #print(monthlyNDforecastM1)
@@ -135,9 +132,9 @@ activity_forecast2 = activity_forecast1.T
 shape =(8, months+1)
 
 activity_forecast3= activity_forecast2.reshape(shape)
-print(activity_forecast1)
-print(activity_forecast2)
-print(activity_forecast3)
+#print(activity_forecast1)
+#print(activity_forecast2)
+#print(activity_forecast3)
 
 #forecast_lines = pd.DataFrame(forecast_lines_ND,forecast_lines_31_60)
 #forecast_lines_61_90, forecast_lines_91_180, forecast_lines_181_360, forecast_lines_360, forecast_lines_Closed)
@@ -202,5 +199,32 @@ plt.legend((p0[0],p1[0],p2[0],p3[0],p4[0],p5[0],p6[0],p7[0]),("ND", "1-30", "31-
 plt.savefig('myfig')
 
 
-#plt.legend(bbox_to_anchor=(1,1), bbox_transform =plt.gcf().transFigure)
-#plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+import PySimpleGUI as sg
+
+layout = [[sg.Text('State: '.ljust(50)), sg.InputText(key="__IN__")],
+          [sg.Text('Transition Matrix'.ljust(50)), sg.FileBrowse(size=(50,1))],
+          [sg.Text('Current AR'.ljust(50)), sg.FileBrowse(size=(50,1))],
+          [sg.RButton('Run', size=(150,1))],
+          [sg.Exit(size=(100,1))],
+          ]
+
+
+window = sg.Window('Forecast Tool', grab_anywhere=True).Layout(layout)
+
+window.Resizable = True
+window.TextJustification = True
+
+
+while True:      
+    e, v = window.Read()      
+    if e in [None, 'Exit']:      
+        break
+    if e in ['Run']:
+        try:
+            state = [i.strip() for i in v["__IN__"].split(",")]
+            
+
+        except:
+            sg.Popup("Invalid Entry: Try Again!")
+
+window.Close()
