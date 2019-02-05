@@ -1,14 +1,24 @@
 # -*- coding: utf-8 -*-
 
-## imports
+import PySimpleGUI as sg
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 
+'''
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.svm import SVR
+from sklearn.neural_network import MLPRegressor
+#import matplotlib.pyplot as plt
+'''
+
 def train_function(path, model, score):
     if path is None:
-        pass
-        #path_to_file
+        path_to_file = None
     else:
         path_to_file = path
 
@@ -76,7 +86,9 @@ def train_function(path, model, score):
 
 
     """end of changes"""
-    X, y = df[dummy_cols + continuous_features], df[['cost']]
+    X = df[dummy_cols + continuous_features]
+    y = df[['cost']]
+    #y = np.ravel(y)
     
     
     # transforming the target
@@ -138,12 +150,14 @@ def train_function(path, model, score):
 
     def accuracy(y_test, y_pred, hold = 5):
         y_pred = y_pred.reshape(-1,1)
-        
+
+        #if y_pred.shape != y_test.shape:
         if y_pred.shape != y_test.values.shape:
             print("Incorrect args")
             return None
         
         matches = []
+        #for i in range(len(y_test)):
         for i in range(len(y_test.values)):
             LSL = (1 - hold / 100) * y_test.values[i]
             USL = (1 + hold / 100) * y_test.values[i]
@@ -168,6 +182,7 @@ def train_function(path, model, score):
     elif score == 'rmsle':
         scoring_fucntion = rmsle
     else:
+        ## default
         scoring_fucntion = accuracy
 
     score_result = scoring_fucntion(y_test, y_pred)
@@ -265,55 +280,36 @@ def predict_function(path, trained_model, trained_scaler):
     
     return df
 ###############################################################################
-### train function ends #######################################################
-#path = r"D:\Users\703143501\Documents\Genpact Internal\GB\Product\train_data.xlsx"
-#m, s, a = train_function(path, 'random forest', 'accuracy')
 
 
-
-
-###############################GUI code  ######################################
-#path_to_image = r"D:\Users\703143501\Desktop\bg_image.png"
-path_to_image = r"D:\Users\703143501\Desktop\logo.png"
-import PySimpleGUI as sg
-
-
-look_and_feel = sg.ListOfLookAndFeelValues()
-#sg.ChangeLookAndFeel(look_and_feel[4])    
-sg.ChangeLookAndFeel('DarkBlue')    
-  
+path_to_image = r"D:\Users\703143501\Documents\Genpact Internal\GB\Product\logo.png"
+#import PySimpleGUI as sg
+ 
+sg.ChangeLookAndFeel('DarkBlue')
 sg.SetOptions(text_justification='right', tooltip_time= 1)
-#sg.Image = path_to_image
-
-### canvas object
-canvas_object = sg.Canvas(canvas=None, 
-                          background_color='red', 
-                          size=(1500, 1000), 
-                          pad=None, 
-                          key='_canvas_', 
-                          tooltip=None,)
-
 
 
 ###
-menu_def = [['&File', ['&Open', ['Train set', 'Unseen Data'], '&Save', 'E&xit', 'Properties']],
-            ['&Edit', ['Paste', ['Special', 'Normal', ], 'Undo'], ],
+##menu_def = [['&File', ['&Select', ['Train Data', 'Unseen Data'], 'Properties', 'Exit']],
+##            ['&Help', ['&About'],]]
+
+menu_def = [['&File', ['Properties', 'Exit']],
             ['&Help', ['&About'],]]
-
-
 
 layout = [ 
         [sg.Menu(menu_def, tearoff=False)],
         [sg.Txt('This is a tool to train a machine learning model on event data and predict the cost for unseen data')], 
             [sg.Image(path_to_image)], 
-            [sg.InputText('Train data'), sg.FileBrowse()], 
-            [sg.InputText('Unseen data'), sg.FileBrowse()], 
-            [sg.Text('choose model'), sg.Radio('linear regression', group_id='model'), sg.Radio('support vector machine', group_id='model'), sg.Radio('neural network', group_id='model'), sg.Radio('random forest', group_id='model')], 
-            [sg.Text('choose scoring metric'), sg.Radio('accuracy', group_id='score'), sg.Radio('rmsle', group_id='score')],
-            [sg.RButton('Train', disabled=False), sg.RButton('Predict', disabled=False),sg.Exit()], 
+            [sg.InputText('Train data', key='_train_path_'), sg.FileBrowse()], 
+            #[sg.InputText('Unseen data', key='_unseen_path_'), sg.FileBrowse()], 
+            [sg.Text('choose model'), sg.Radio('linear regression', group_id='model', key='_lr_'), sg.Radio('support vector machine', group_id='model', key='_svm_'), sg.Radio('neural network', group_id='model', key='_nn_'), sg.Radio('random forest', group_id='model', key='_rf_')], 
+            [sg.Text('choose scoring metric'), sg.Radio('accuracy', group_id='score', key='_acc_'), sg.Radio('rmsle', group_id='score', key='_rmsle_')],
+            [sg.RButton('Train', disabled=False)],  #, sg.RButton('Predict', disabled=False),sg.Exit()],
+            [sg.InputText('Unseen data', key='_unseen_path_'), sg.FileBrowse()], 
             [sg.Text('Accuracy'), sg.Text('         ', key='_SCORE_')],
+            [sg.RButton('Predict', disabled=False), sg.Exit()],
             [sg.RButton('About', tooltip='tool description', size=(150,1), auto_size_button=True)],
-            #[canvas_object]
+            #[canvas_object], 
         ]
 
 
@@ -324,44 +320,52 @@ window.BackgroundColor = 'black'
 window.Resizable = True
 window.TextJustification = True
 
-#event, values = window.Read()
-#window.Close()
 
-### event loop
-while True:      
-    event, values = window.Read()      
+
+model, score = None, None
+
+while True:
+    
+    
+    event, values = window.Read()
+    if event == 'Properties':
+        if model is None or score is None:
+            sg.Popup("Model not configured properly!")
+        else:
+            sg.Popup(f"Model: {model} , Scoring Metric: {score}")
+    
     if event is None or event == 'Exit':      
         break      
     if event == 'Train':
-        path_to_train_data = values[1]
+        path_to_train_data = values['_train_path_']
         
         ### model value
-        if values[3] == True:
+        if values['_lr_'] == True:
             model = 'linear regression'
-        if values[4] == True:
+        if values['_svm_'] == True:
             model = 'svm'
-        if values[5] == True:
+        if values['_nn_'] == True:
             model = 'neural network'
-        if values[6] == True:
+        if values['_rf_'] == True:
             model = 'random forest'
         
         ## score value
-        if values[7] == True:
+        if values['_acc_'] == True:
             score = 'accuracy'
-        if values[8] == True:
+        if values['_rmsle_'] == True:
             score = 'rmsle'
         
         ### call train fucntion
         trained_model, trained_scaler, score_result = train_function(path_to_train_data, model, score)
-                
         window.FindElement('_SCORE_').Update(score_result)
+    
     if event == 'About':
-        #sg.Popup("This tool predicts event cost based on machine learning model which learns from event data")
         sg.Popup("This tool trains a Machine Learning Algorithm on event data and predicts cost for unseen events")
+    
     if event == 'Predict':
+        
         ### pop up a window to choose between individual entries or from file
-        #choice_event, _ = choice()
-        path_to_unseen_data = values[2]
+        path_to_unseen_data = values['_unseen_path_']
         original_data = pd.read_excel(path_to_unseen_data, sheet_name='Sheet1', parse_dates = [])
         
         df = predict_function(path_to_unseen_data, trained_model, trained_scaler)
@@ -370,7 +374,22 @@ while True:
         original_data['cost'] = y
         
         path_to_write = r"D:\Users\703143501\Documents\Genpact Internal\GB\Product\result.csv"
-        original_data.to_csv(path_to_write)
+        original_data.to_csv(path_to_write, index = None)
+        
+
+        ## plot the image
+        data = pd.read_csv(path_to_write)
+
+        index = np.arange(len(data['WORKFLOW ID'].values))
+        plt.xlabel('WF#', fontsize=12, rotation = 30)
+        plt.ylabel('Cost', fontsize=12)
+        plt.xticks(index, fontsize=12, rotation=30)
+        plt.title(" Cost Estimate ")
+
+        p = plt.bar(index, np.array(data['cost'].values))
+        plt.legend(p, loc=2, fontsize=8)
+        plt.show()
+
         sg.Popup("                         Result written !                         ")
 
 window.Close()
